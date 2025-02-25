@@ -8,9 +8,10 @@ import ctypes
 import sys
 import os
 
+appDataDir.mkdir(parents=True, exist_ok=True)  # create the app data directory if it doesn't exist
+(appDataDir/"logs").mkdir(parents=True, exist_ok=True)  # create the logs directory if it doesn't exist
 
 log.basicConfig(level=log.DEBUG, filename=appDataDir/"logs"/"latest.log", filemode="w", format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-
 
 if os.name == "nt":  # if on Windows
     appId = "ilwan.bangerplayer"
@@ -38,4 +39,5 @@ if darkdetect.isDark():  # if using dark mode
     palette.setColor(QtGui.QPalette.HighlightedText, QtCore.Qt.black)
     App.setPalette(palette)
 MainWindow = interface.Window()
+MainWindow.startInterface()
 sys.exit(App.exec_())

@@ -8,7 +8,7 @@ if getattr(sys, "frozen", False):  # if running as a bundled app
 else:  # if running as a script
     localPath = Path(__file__).resolve().parent
 
-appDataDir = Path(platformdirs.user_data_dir("MinecraftModManager", appauthor="Ilwan"))  # path to the save data folder
+appDataDir = Path(platformdirs.user_data_dir("BangerPlayer", appauthor="Ilwan"))  # path to the save data folder
 
 class Fonts():
     """a class containing useful fonts"""
