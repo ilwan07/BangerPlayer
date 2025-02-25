@@ -1,5 +1,7 @@
+from constants import *
+from widgets import *
 import PyQt5.QtWidgets as qtw
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtCore, QtGui
 import logging
 
 log = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ class Window(qtw.QMainWindow):
         self.buildPlayerPanel()
         self.setupInterface()
         log.info("interface loaded, now showing the window")
+        self.showMaximized()
         self.show()
     
     def buildMainInterface(self):
@@ -70,11 +73,66 @@ class Window(qtw.QMainWindow):
     
     def buildFoldersPanel(self):
         """build the folders panel"""
-        return NotImplemented  #TODO
+        # add folder button
+        self.addFolderButton = qtw.QPushButton("Add Folder")
+        self.addFolderButton.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.addFolderButton.setFont(Fonts.titleFont)
+        self.addFolderButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.addFolderButton.setStyleSheet("padding: 10px;")
+        self.foldersPanelLayout.addWidget(self.addFolderButton)
+
+        # separator line
+        self.foldersPanelLayout.addWidget(Separator(QtCore.Qt.Horizontal))
+
+        # folders scollable list
+        self.foldersList = qtw.QScrollArea()
+        self.foldersList.setWidgetResizable(True)
+        self.foldersListWidget = qtw.QWidget()
+        self.foldersListLayout = qtw.QVBoxLayout()
+        self.foldersListWidget.setLayout(self.foldersListLayout)
+        self.foldersList.setWidget(self.foldersListWidget)
+        self.foldersPanelLayout.addWidget(self.foldersList)
+        log.debug("created the folders panel")
     
     def buildMusicsPanel(self):
         """build the musics panel"""
-        return NotImplemented  #TODO
+        # folder name label
+        self.folderNameLabel = qtw.QLabel("FOLDER NAME")  #TODO: remove placeholder
+        self.folderNameLabel.setFont(Fonts.smallTitleFont)
+        self.folderNameLabel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Preferred)
+        self.folderNameLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.musicsPanelLayout.addWidget(self.folderNameLabel)
+
+        # number of elements label
+        self.folderElementsLabel = qtw.QLabel("NB ELEMENTS")  #TODO: remove placeholder
+        self.folderElementsLabel.setFont(Fonts.subtitleFont)
+        self.folderElementsLabel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Preferred)
+        self.folderElementsLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.musicsPanelLayout.addWidget(self.folderElementsLabel)
+
+        # separator line
+        self.musicsPanelLayout.addWidget(Separator(QtCore.Qt.Horizontal))
+
+        # musics scollable list
+        self.musicsList = qtw.QScrollArea()
+        self.musicsList.setWidgetResizable(True)
+        self.musicsListWidget = qtw.QWidget()
+        self.musicsListLayout = qtw.QVBoxLayout()
+        self.musicsListWidget.setLayout(self.musicsListLayout)
+        self.musicsList.setWidget(self.musicsListWidget)
+        self.musicsPanelLayout.addWidget(self.musicsList)
+
+        # separator line
+        self.musicsPanelLayout.addWidget(Separator(QtCore.Qt.Horizontal))
+        
+        # control buttons
+        self.controlButtonsWidget = qtw.QWidget()
+        self.controlButtonsLayout = qtw.QHBoxLayout()
+        self.controlButtonsWidget.setLayout(self.controlButtonsLayout)
+        self.musicsPanelLayout.addWidget(self.controlButtonsWidget)
+
+        #add each button
+        #TODO: add the buttons
     
     def buildPlayerPanel(self):
         """build the player panel"""
