@@ -49,6 +49,10 @@ class Window(qtw.QMainWindow):
         self.musicsPanelLayout.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignTop)
         self.playerPanelLayout.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignTop)
 
+        self.foldersPanel.setSizePolicy(qtw.QSizePolicy.Fixed, qtw.QSizePolicy.Expanding)
+        self.musicsPanel.setSizePolicy(qtw.QSizePolicy.Fixed, qtw.QSizePolicy.Expanding)
+        self.playerPanel.setSizePolicy(qtw.QSizePolicy.Fixed, qtw.QSizePolicy.Expanding)
+
         self.foldersPanel.setLayout(self.foldersPanelLayout)
         self.musicsPanel.setLayout(self.musicsPanelLayout)
         self.playerPanel.setLayout(self.playerPanelLayout)
@@ -98,14 +102,14 @@ class Window(qtw.QMainWindow):
     def buildMusicsPanel(self):
         """build the musics panel"""
         # folder name label
-        self.folderNameLabel = qtw.QLabel("FOLDER NAME")  #TODO: remove placeholder
+        self.folderNameLabel = qtw.QLabel("[FOLDER NAME]")  #TODO: remove placeholder
         self.folderNameLabel.setFont(Fonts.smallTitleFont)
         self.folderNameLabel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Preferred)
         self.folderNameLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.musicsPanelLayout.addWidget(self.folderNameLabel)
 
         # number of elements label
-        self.folderElementsLabel = qtw.QLabel("NB ELEMENTS")  #TODO: remove placeholder
+        self.folderElementsLabel = qtw.QLabel("[NB ELEMENTS]")  #TODO: remove placeholder
         self.folderElementsLabel.setFont(Fonts.subtitleFont)
         self.folderElementsLabel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Preferred)
         self.folderElementsLabel.setAlignment(QtCore.Qt.AlignCenter)
@@ -181,6 +185,27 @@ class Window(qtw.QMainWindow):
         self.musicCover.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
         self.musicCover.setAlignment(QtCore.Qt.AlignCenter)
         self.playerPanelLayout.addWidget(self.musicCover)
+
+        # spacing for the title
+        self.playerPanelLayout.addSpacing(30)
+
+        # music title
+        self.musicTitle = qtw.QLabel("[MUSIC TITLE]")  #TODO: remove placeholder
+        self.musicTitle.setFont(Fonts.titleFont)
+        self.musicTitle.setAlignment(QtCore.Qt.AlignCenter)
+        self.playerPanelLayout.addWidget(self.musicTitle)
+
+        # music author
+        self.musicArtist = qtw.QLabel("[AUTHOR]")  #TODO: remove placeholder
+        self.musicArtist.setFont(Fonts.subtitleFont)
+        self.musicArtist.setAlignment(QtCore.Qt.AlignCenter)
+        self.playerPanelLayout.addWidget(self.musicArtist)
+
+        #TODO: rest of the player panel
+
+        # add stretch to the layout
+        self.playerPanelLayout.addStretch()
+        log.debug("created the player panel")
 
     def setupInterface(self):
         """setup the main interface"""
