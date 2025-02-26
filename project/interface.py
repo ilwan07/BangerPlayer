@@ -129,10 +129,44 @@ class Window(qtw.QMainWindow):
         self.controlButtonsWidget = qtw.QWidget()
         self.controlButtonsLayout = qtw.QHBoxLayout()
         self.controlButtonsWidget.setLayout(self.controlButtonsLayout)
+        self.controlButtonsWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.controlButtonsLayout.setAlignment(QtCore.Qt.AlignLeft)
         self.musicsPanelLayout.addWidget(self.controlButtonsWidget)
 
-        #add each button
-        #TODO: add the buttons
+        # play pause button
+        self.globalPlayButton = qtw.QPushButton()
+        self.globalPlayButton.setFixedSize(40, 40)
+        self.globalPlayButton.setIcon(QtGui.QIcon(str(iconsDir / "play.svg")))
+        self.globalPlayButton.setIconSize(QtCore.QSize(30, 30))
+        self.globalPlayButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.controlButtonsLayout.addWidget(self.globalPlayButton)
+
+        # loop button
+        self.loopButton = qtw.QPushButton()
+        self.loopButton.setFixedSize(40, 40)
+        self.loopButton.setIcon(QtGui.QIcon(str(iconsDir / "loop.svg")))
+        self.loopButton.setIconSize(QtCore.QSize(30, 30))
+        self.loopButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.controlButtonsLayout.addWidget(self.loopButton)
+
+        # shuffle button
+        self.shuffleButton = qtw.QPushButton()
+        self.shuffleButton.setFixedSize(40, 40)
+        self.shuffleButton.setIcon(QtGui.QIcon(str(iconsDir / "shuffle.svg")))
+        self.shuffleButton.setIconSize(QtCore.QSize(30, 30))
+        self.shuffleButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.controlButtonsLayout.addWidget(self.shuffleButton)
+
+        self.controlButtonsLayout.addStretch()
+
+        # sort button
+        self.sortButton = qtw.QPushButton()
+        self.sortButton.setFixedSize(40, 40)
+        self.sortButton.setIcon(QtGui.QIcon(str(iconsDir / "sort.svg")))
+        self.sortButton.setIconSize(QtCore.QSize(30, 30))
+        self.sortButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.controlButtonsLayout.addWidget(self.sortButton)
+        log.debug("created the musics panel")
     
     def buildPlayerPanel(self):
         """build the player panel"""

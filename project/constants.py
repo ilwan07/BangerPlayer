@@ -1,6 +1,7 @@
 from pathlib import Path
 from PyQt5 import QtGui
 import platformdirs
+import darkdetect
 import sys
 
 if getattr(sys, "frozen", False):  # if running as a bundled app
@@ -9,6 +10,8 @@ else:  # if running as a script
     localPath = Path(__file__).resolve().parent
 
 appDataDir = Path(platformdirs.user_data_dir("BangerPlayer", appauthor="Ilwan"))  # path to the save data folder
+colorMode = "dark" if darkdetect.isDark() else "light"  # color mode of the interface
+iconsDir = localPath / "assets" / "icons" / colorMode  # path to the icons directory
 
 class Fonts():
     """a class containing useful fonts"""
