@@ -2,6 +2,7 @@ from constants import *
 from widgets import *
 import PyQt5.QtWidgets as qtw
 from PyQt5 import QtCore, QtGui
+import darkdetect
 import logging
 
 log = logging.getLogger(__name__)
@@ -170,7 +171,16 @@ class Window(qtw.QMainWindow):
     
     def buildPlayerPanel(self):
         """build the player panel"""
-        return NotImplemented  #TODO
+        # spacing for the cover
+        self.playerPanelLayout.addSpacing(30)
+
+        # cover image
+        self.musicCover = SquareVectorLabel(iconsDir / "cover.svg")
+        self.musicCover.setMaximumSize(300, 300)
+        self.musicCover.setMinimumSize(100, 100)
+        self.musicCover.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        self.musicCover.setAlignment(QtCore.Qt.AlignCenter)
+        self.playerPanelLayout.addWidget(self.musicCover)
 
     def setupInterface(self):
         """setup the main interface"""

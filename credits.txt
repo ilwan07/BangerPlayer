@@ -1,1 +1,1 @@
-assets/icons: uxwing.com (inverted colors for dark mode)
+assets/icons: uxwing.com (inverted colors for dark mode, may be edited)
