@@ -203,30 +203,84 @@ class Window(qtw.QMainWindow):
         self.musicArtist.setAlignment(QtCore.Qt.AlignCenter)
         self.playerPanelLayout.addWidget(self.musicArtist)
 
-        # music progress bar layout
+        # music progress layout
         self.progressWidget = qtw.QWidget()
         self.progressLayout = qtw.QHBoxLayout()
         self.progressWidget.setLayout(self.progressLayout)
         self.progressWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
-        self.progressLayout.setAlignment(QtCore.Qt.AlignCenter)
+        self.progressLayout.setAlignment(QtCore.Qt.AlignTop)
         self.playerPanelLayout.addWidget(self.progressWidget)
 
         # music play button
+        self.musicPlayButtonWidget = qtw.QWidget()
+        self.musicPlayButtonLayout = qtw.QVBoxLayout()
+        self.musicPlayButtonWidget.setLayout(self.musicPlayButtonLayout)
+        self.musicPlayButtonWidget.setSizePolicy(qtw.QSizePolicy.Fixed, qtw.QSizePolicy.Fixed)
+        self.progressLayout.addWidget(self.musicPlayButtonWidget)
+
         self.musicPlayButton = qtw.QPushButton()
         self.musicPlayButton.setFixedSize(40, 40)
         self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
         self.musicPlayButton.setIconSize(QtCore.QSize(30, 30))
         self.musicPlayButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.progressLayout.addWidget(self.musicPlayButton)
+        self.musicPlayButtonLayout.addWidget(self.musicPlayButton)
+        self.musicPlayButtonLayout.addSpacing(45)
 
         # music progress bar
+        self.progressBarWidget = qtw.QWidget()
+        self.progressBarLayout = qtw.QVBoxLayout()
+        self.progressBarWidget.setLayout(self.progressBarLayout)
+        self.progressBarWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.progressLayout.addWidget(self.progressBarWidget)
+
         self.musicProgressBar = MusicProgressBar()
         self.musicProgressBar.setRange(0, 100)
         self.musicProgressBar.setValue(0)
         self.musicProgressBar.setTextVisible(False)
         self.musicProgressBar.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.musicProgressBar.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
-        self.progressLayout.addWidget(self.musicProgressBar)
+        self.progressBarLayout.addWidget(self.musicProgressBar)
+
+        # music time labels
+        self.musicTimeWidget = qtw.QWidget()
+        self.musicTimeLayout = qtw.QHBoxLayout()
+        self.musicTimeWidget.setLayout(self.musicTimeLayout)
+        self.musicTimeWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.progressBarLayout.addWidget(self.musicTimeWidget)
+
+        self.musicCurrentTime = qtw.QLabel("0:00")
+        self.musicCurrentTime.setFont(Fonts.bigTextFont)
+        self.musicTimeLayout.addWidget(self.musicCurrentTime)
+
+        self.musicTimeLayout.addStretch()
+
+        self.musicTotalTime = qtw.QLabel("0:00")
+        self.musicTotalTime.setFont(Fonts.bigTextFont)
+        self.musicTimeLayout.addWidget(self.musicTotalTime)
+
+        # separator for the buttons below
+        self.playerPanelLayout.addWidget(Separator(QtCore.Qt.Horizontal))
+
+        # rename button
+        self.renameButton = qtw.QPushButton("Rename")
+        self.renameButton.setFont(Fonts.titleFont)
+        self.renameButton.setFixedHeight(50)
+        self.renameButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.playerPanelLayout.addWidget(self.renameButton)
+
+        # set author button
+        self.setAuthorButton = qtw.QPushButton("Set Author")
+        self.setAuthorButton.setFont(Fonts.titleFont)
+        self.setAuthorButton.setFixedHeight(50)
+        self.setAuthorButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.playerPanelLayout.addWidget(self.setAuthorButton)
+
+        # set cover button
+        self.setCoverButton = qtw.QPushButton("Set Cover")
+        self.setCoverButton.setFont(Fonts.titleFont)
+        self.setCoverButton.setFixedHeight(50)
+        self.setCoverButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.playerPanelLayout.addWidget(self.setCoverButton)
 
         # add stretch to the layout
         self.playerPanelLayout.addStretch()
