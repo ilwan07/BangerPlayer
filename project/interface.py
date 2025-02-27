@@ -2,7 +2,6 @@ from constants import *
 from widgets import *
 import PyQt5.QtWidgets as qtw
 from PyQt5 import QtCore, QtGui
-import darkdetect
 import logging
 
 log = logging.getLogger(__name__)
@@ -65,7 +64,7 @@ class Window(qtw.QMainWindow):
         self.mainSplitter.addWidget(self.foldersPanel)
         self.mainSplitter.addWidget(self.musicsPanel)
         self.mainSplitter.addWidget(self.playerPanel)
-        self.mainSplitter.setSizes([400, 400, 400])
+        self.mainSplitter.setSizes([300, 400, 400])
 
         # Add a line to make the splitter visible
         for i in range(self.mainSplitter.count()):
@@ -95,22 +94,28 @@ class Window(qtw.QMainWindow):
         self.foldersList.setWidgetResizable(True)
         self.foldersListWidget = qtw.QWidget()
         self.foldersListLayout = qtw.QVBoxLayout()
+        self.foldersListLayout.setAlignment(QtCore.Qt.AlignTop)
         self.foldersListWidget.setLayout(self.foldersListLayout)
         self.foldersList.setWidget(self.foldersListWidget)
         self.foldersPanelLayout.addWidget(self.foldersList)
+
         log.debug("created the folders panel")
+
+        #TODO: remove the test widget below
+        self.testFolderWidget = FolderWidget(Path.home() / "Music")
+        self.foldersListLayout.addWidget(self.testFolderWidget)
     
     def buildMusicsPanel(self):
         """build the musics panel"""
         # folder name label
-        self.folderNameLabel = qtw.QLabel("[FOLDER NAME]")  #TODO: remove placeholder
+        self.folderNameLabel = qtw.QLabel("[FOLDER NAME]")
         self.folderNameLabel.setFont(Fonts.smallTitleFont)
         self.folderNameLabel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Preferred)
         self.folderNameLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.musicsPanelLayout.addWidget(self.folderNameLabel)
 
         # number of elements label
-        self.folderElementsLabel = qtw.QLabel("[NB ELEMENTS]")  #TODO: remove placeholder
+        self.folderElementsLabel = qtw.QLabel("[NB ELEMENTS]")
         self.folderElementsLabel.setFont(Fonts.subtitleFont)
         self.folderElementsLabel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Preferred)
         self.folderElementsLabel.setAlignment(QtCore.Qt.AlignCenter)
@@ -192,13 +197,13 @@ class Window(qtw.QMainWindow):
         self.coverLayout.addWidget(self.musicCover)
 
         # music title
-        self.musicTitle = qtw.QLabel("[MUSIC TITLE]")  #TODO: remove placeholder
+        self.musicTitle = qtw.QLabel("[MUSIC TITLE]")
         self.musicTitle.setFont(Fonts.titleFont)
         self.musicTitle.setAlignment(QtCore.Qt.AlignCenter)
         self.playerPanelLayout.addWidget(self.musicTitle)
 
         # music author
-        self.musicArtist = qtw.QLabel("[AUTHOR]")  #TODO: remove placeholder
+        self.musicArtist = qtw.QLabel("[AUTHOR]")
         self.musicArtist.setFont(Fonts.subtitleFont)
         self.musicArtist.setAlignment(QtCore.Qt.AlignCenter)
         self.playerPanelLayout.addWidget(self.musicArtist)
@@ -236,7 +241,8 @@ class Window(qtw.QMainWindow):
         self.musicProgressBar = MusicProgressBar()
         self.musicProgressBar.setRange(0, 100)
         self.musicProgressBar.setValue(0)
-        self.musicProgressBar.setTextVisible(False)
+        self.musicProgressBar.setStyleSheet(f"""QProgressBar {{ border: 2px solid gray; border-radius: 5px; background-color: transparent; }}
+                                                QProgressBar::chunk {{ background-color: {"white" if colorMode == "dark" else "black"}; border-radius: 5px; }}""")
         self.musicProgressBar.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.musicProgressBar.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
         self.progressBarLayout.addWidget(self.musicProgressBar)
