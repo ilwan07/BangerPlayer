@@ -11,7 +11,8 @@ else:  # if running as a script
 
 appDataDir = Path(platformdirs.user_data_dir("BangerPlayer", appauthor="Ilwan"))  # path to the save data folder
 colorMode = "dark" if darkdetect.isDark() else "light"  # color mode of the interface
-iconsDir = localPath / "assets" / "icons" / colorMode  # path to the icons directory
+assetsDir = localPath / "assets" 
+themeAssetsDir = assetsDir / colorMode  # path to the theme sensitive assets
 
 class Fonts():
     """a class containing useful fonts"""

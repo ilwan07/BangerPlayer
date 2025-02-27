@@ -18,6 +18,7 @@ class Separator(qtw.QFrame):
         self.setFrameShadow(qtw.QFrame.Sunken)
 
 class SquareVectorLabel(qtw.QLabel):
+    """a widget that displays a square SVG image"""
     def __init__(self, svgPath:Path, parent=None):
         super().__init__(parent)
         self.svg_renderer = QtSvg.QSvgRenderer(str(svgPath))
@@ -47,3 +48,32 @@ class SquareVectorLabel(qtw.QLabel):
         # Render the SVG to fill the square area.
         self.svg_renderer.render(painter, QtCore.QRectF(0, 0, side, side))
         painter.restore()
+
+class MusicProgressBar(qtw.QProgressBar):
+    """a progress bar that emits a signal with the selected value when clicked and extends when hovered"""
+    clickedValue = QtCore.pyqtSignal(float)  # clicked value
+    normalSize:int = 8  # normal height of the progress bar
+    expandedSize:int = 30  # height of the progress bar when hovered
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFixedHeight(self.normalSize)
+
+    def mousePressEvent(self, event):
+        """emit the clicked value when the progress bar is clicked"""
+        if event.button() == QtCore.Qt.LeftButton:
+            value = self.minimum() + (self.maximum() - self.minimum()) * event.x() / self.width()
+            self.clickedValue.emit(value)
+            self.setValue(round(value))
+            log.debug(f"clicked on the progress bar at {round(value, 2)}")
+        super().mousePressEvent(event)
+    
+    def enterEvent(self, event):
+        """extend the progress bar when hovered"""
+        self.setFixedHeight(self.expandedSize)
+        super().enterEvent(event)
+    
+    def leaveEvent(self, event):
+        """shrink the progress bar when the mouse leaves"""
+        self.setFixedHeight(self.normalSize)
+        super().leaveEvent(event)

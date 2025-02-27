@@ -13,6 +13,7 @@ class Window(qtw.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Banger Player")
+        self.setWindowIcon(QtGui.QIcon(str(themeAssetsDir / "logo" / "logo.svg")))
         log.debug("window instance created")
     
     def startInterface(self):
@@ -49,9 +50,9 @@ class Window(qtw.QMainWindow):
         self.musicsPanelLayout.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignTop)
         self.playerPanelLayout.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignTop)
 
-        self.foldersPanel.setSizePolicy(qtw.QSizePolicy.Fixed, qtw.QSizePolicy.Expanding)
-        self.musicsPanel.setSizePolicy(qtw.QSizePolicy.Fixed, qtw.QSizePolicy.Expanding)
-        self.playerPanel.setSizePolicy(qtw.QSizePolicy.Fixed, qtw.QSizePolicy.Expanding)
+        self.foldersPanel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        self.musicsPanel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        self.playerPanel.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
 
         self.foldersPanel.setLayout(self.foldersPanelLayout)
         self.musicsPanel.setLayout(self.musicsPanelLayout)
@@ -141,7 +142,7 @@ class Window(qtw.QMainWindow):
         # play pause button
         self.globalPlayButton = qtw.QPushButton()
         self.globalPlayButton.setFixedSize(40, 40)
-        self.globalPlayButton.setIcon(QtGui.QIcon(str(iconsDir / "play.svg")))
+        self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
         self.globalPlayButton.setIconSize(QtCore.QSize(30, 30))
         self.globalPlayButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.controlButtonsLayout.addWidget(self.globalPlayButton)
@@ -149,7 +150,7 @@ class Window(qtw.QMainWindow):
         # loop button
         self.loopButton = qtw.QPushButton()
         self.loopButton.setFixedSize(40, 40)
-        self.loopButton.setIcon(QtGui.QIcon(str(iconsDir / "loop.svg")))
+        self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop.svg")))
         self.loopButton.setIconSize(QtCore.QSize(30, 30))
         self.loopButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.controlButtonsLayout.addWidget(self.loopButton)
@@ -157,7 +158,7 @@ class Window(qtw.QMainWindow):
         # shuffle button
         self.shuffleButton = qtw.QPushButton()
         self.shuffleButton.setFixedSize(40, 40)
-        self.shuffleButton.setIcon(QtGui.QIcon(str(iconsDir / "shuffle.svg")))
+        self.shuffleButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "shuffle.svg")))
         self.shuffleButton.setIconSize(QtCore.QSize(30, 30))
         self.shuffleButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.controlButtonsLayout.addWidget(self.shuffleButton)
@@ -167,7 +168,7 @@ class Window(qtw.QMainWindow):
         # sort button
         self.sortButton = qtw.QPushButton()
         self.sortButton.setFixedSize(40, 40)
-        self.sortButton.setIcon(QtGui.QIcon(str(iconsDir / "sort.svg")))
+        self.sortButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "sort.svg")))
         self.sortButton.setIconSize(QtCore.QSize(30, 30))
         self.sortButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.controlButtonsLayout.addWidget(self.sortButton)
@@ -175,19 +176,20 @@ class Window(qtw.QMainWindow):
     
     def buildPlayerPanel(self):
         """build the player panel"""
-        # spacing for the cover
-        self.playerPanelLayout.addSpacing(30)
-
         # cover image
-        self.musicCover = SquareVectorLabel(iconsDir / "cover.svg")
+        self.coverWidget = qtw.QWidget()
+        self.coverLayout = qtw.QHBoxLayout()
+        self.coverWidget.setLayout(self.coverLayout)
+        self.coverWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        self.coverLayout.setAlignment(QtCore.Qt.AlignCenter)
+        self.playerPanelLayout.addWidget(self.coverWidget)
+
+        self.musicCover = SquareVectorLabel(themeAssetsDir / "icons" / "cover.svg")
         self.musicCover.setMaximumSize(300, 300)
         self.musicCover.setMinimumSize(100, 100)
         self.musicCover.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
         self.musicCover.setAlignment(QtCore.Qt.AlignCenter)
-        self.playerPanelLayout.addWidget(self.musicCover)
-
-        # spacing for the title
-        self.playerPanelLayout.addSpacing(30)
+        self.coverLayout.addWidget(self.musicCover)
 
         # music title
         self.musicTitle = qtw.QLabel("[MUSIC TITLE]")  #TODO: remove placeholder
@@ -201,7 +203,30 @@ class Window(qtw.QMainWindow):
         self.musicArtist.setAlignment(QtCore.Qt.AlignCenter)
         self.playerPanelLayout.addWidget(self.musicArtist)
 
-        #TODO: rest of the player panel
+        # music progress bar layout
+        self.progressWidget = qtw.QWidget()
+        self.progressLayout = qtw.QHBoxLayout()
+        self.progressWidget.setLayout(self.progressLayout)
+        self.progressWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.progressLayout.setAlignment(QtCore.Qt.AlignCenter)
+        self.playerPanelLayout.addWidget(self.progressWidget)
+
+        # music play button
+        self.musicPlayButton = qtw.QPushButton()
+        self.musicPlayButton.setFixedSize(40, 40)
+        self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
+        self.musicPlayButton.setIconSize(QtCore.QSize(30, 30))
+        self.musicPlayButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.progressLayout.addWidget(self.musicPlayButton)
+
+        # music progress bar
+        self.musicProgressBar = MusicProgressBar()
+        self.musicProgressBar.setRange(0, 100)
+        self.musicProgressBar.setValue(0)
+        self.musicProgressBar.setTextVisible(False)
+        self.musicProgressBar.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.musicProgressBar.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
+        self.progressLayout.addWidget(self.musicProgressBar)
 
         # add stretch to the layout
         self.playerPanelLayout.addStretch()
