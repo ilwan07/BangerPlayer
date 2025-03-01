@@ -92,18 +92,13 @@ class Window(qtw.QMainWindow):
         # folders scollable list
         self.foldersList = qtw.QScrollArea()
         self.foldersList.setWidgetResizable(True)
+        self.foldersList.setFrameShape(qtw.QFrame.NoFrame)
         self.foldersListWidget = qtw.QWidget()
         self.foldersListLayout = qtw.QVBoxLayout()
         self.foldersListLayout.setAlignment(QtCore.Qt.AlignTop)
         self.foldersListWidget.setLayout(self.foldersListLayout)
         self.foldersList.setWidget(self.foldersListWidget)
         self.foldersPanelLayout.addWidget(self.foldersList)
-
-        log.debug("created the folders panel")
-
-        #TODO: remove the test widget below
-        self.testFolderWidget = FolderWidget(Path.home() / "Music")
-        self.foldersListLayout.addWidget(self.testFolderWidget)
     
     def buildMusicsPanel(self):
         """build the musics panel"""
@@ -127,8 +122,10 @@ class Window(qtw.QMainWindow):
         # musics scollable list
         self.musicsList = qtw.QScrollArea()
         self.musicsList.setWidgetResizable(True)
+        self.musicsList.setFrameShape(qtw.QFrame.NoFrame)
         self.musicsListWidget = qtw.QWidget()
         self.musicsListLayout = qtw.QVBoxLayout()
+        self.musicsListLayout.setAlignment(QtCore.Qt.AlignTop)
         self.musicsListWidget.setLayout(self.musicsListLayout)
         self.musicsList.setWidget(self.musicsListWidget)
         self.musicsPanelLayout.addWidget(self.musicsList)
@@ -177,6 +174,7 @@ class Window(qtw.QMainWindow):
         self.sortButton.setIconSize(QtCore.QSize(30, 30))
         self.sortButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.controlButtonsLayout.addWidget(self.sortButton)
+
         log.debug("created the musics panel")
     
     def buildPlayerPanel(self):
@@ -242,7 +240,7 @@ class Window(qtw.QMainWindow):
         self.musicProgressBar.setRange(0, 100)
         self.musicProgressBar.setValue(0)
         self.musicProgressBar.setStyleSheet(f"""QProgressBar {{ border: 2px solid gray; border-radius: 5px; background-color: transparent; }}
-                                                QProgressBar::chunk {{ background-color: {"white" if colorMode == "dark" else "black"}; border-radius: 5px; }}""")
+                                                QProgressBar::chunk {{ background-color: {"white" if colorMode == "dark" else "black"}; border-radius: 3px; }}""")
         self.musicProgressBar.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.musicProgressBar.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
         self.progressBarLayout.addWidget(self.musicProgressBar)
@@ -254,13 +252,13 @@ class Window(qtw.QMainWindow):
         self.musicTimeWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
         self.progressBarLayout.addWidget(self.musicTimeWidget)
 
-        self.musicCurrentTime = qtw.QLabel("0:00")
+        self.musicCurrentTime = qtw.QLabel("[0:00]")
         self.musicCurrentTime.setFont(Fonts.bigTextFont)
         self.musicTimeLayout.addWidget(self.musicCurrentTime)
 
         self.musicTimeLayout.addStretch()
 
-        self.musicTotalTime = qtw.QLabel("0:00")
+        self.musicTotalTime = qtw.QLabel("[0:00]")
         self.musicTotalTime.setFont(Fonts.bigTextFont)
         self.musicTimeLayout.addWidget(self.musicTotalTime)
 
