@@ -13,6 +13,9 @@ appDataDir = Path(platformdirs.user_data_dir("BangerPlayer", appauthor="Ilwan"))
 colorMode = "dark" if darkdetect.isDark() else "light"  # color mode of the interface
 assetsDir = localPath / "assets" 
 themeAssetsDir = assetsDir / colorMode  # path to the theme sensitive assets
+configFile = appDataDir / "config.json"  # path to the config file
+
+supportedAudioFormats = [".mp3", ".wav", ".flac", ".ogg", ".m4a"]  # supported audio formats
 
 class Fonts():
     """a class containing useful fonts"""

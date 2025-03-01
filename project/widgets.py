@@ -65,11 +65,11 @@ class SquareVectorLabel(qtw.QLabel):
 class MusicProgressBar(qtw.QProgressBar):
     """a progress bar that emits a signal with the selected value when clicked and extends when hovered"""
     clickedValue = QtCore.pyqtSignal(float)  # clicked value
-    normalSize:int = 8  # normal height of the progress bar
-    expandedSize:int = 30  # height of the progress bar when hovered
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.normalSize:int = 8  # normal height of the progress bar
+        self.expandedSize:int = 30  # height of the progress bar when hovered
         self.setFixedHeight(self.normalSize)
         self.setTextVisible(False)
 
@@ -95,11 +95,13 @@ class MusicProgressBar(qtw.QProgressBar):
 class FolderWidget(qtw.QFrame):
     """a widget that displays a folder and its infos in the panel"""
     wasSelected = QtCore.pyqtSignal(Path) # signal emitted when the folder is selected
-    isSelected = False  # track if the folder is selected
-    dictStyle = {}  # dictionary of styles for the folder widget
+    wasRemoved = QtCore.pyqtSignal(Path)  # signal emitted when the folder is deleted
 
     def __init__(self, folderPath:Path, parent=None):
         super().__init__(parent)
+        # some variables
+        self.isSelected = False  # track if the folder is selected
+        self.dictStyle = {}  # dictionary of styles for the folder widget
 
         # main layout
         self.folderPath = folderPath
@@ -128,14 +130,22 @@ class FolderWidget(qtw.QFrame):
         # number of music files
         self.nbElements = 0
         for dir in glob.glob(str(folderPath/"*")):
-            if Path(dir).is_file() and Path(dir).suffix in [".mp3", ".wav", ".flac", ".ogg", ".m4a"]:
+            if Path(dir).is_file() and Path(dir).suffix in supportedAudioFormats:
                 self.nbElements += 1
         self.nbElementsLabel = qtw.QLabel(f"{self.nbElements} Musics")
         self.nbElementsLabel.setFont(Fonts.subtitleFont)
         self.labelsLayout.addWidget(self.nbElementsLabel)
 
+        # remove folder button
+        self.removeButton = qtw.QPushButton()
+        self.removeButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "remove.svg")))
+        self.removeButton.setFixedSize(30, 30)
+        self.removeButton.setCursor(QtCore.Qt.PointingHandCursor)
+        self.removeButton.clicked.connect(lambda: self.wasRemoved.emit(self.folderPath))
+        self.mainLayout.addWidget(self.removeButton)
+
         # mouse tracking
-        self.interiorWidgets = (self.iconLabel, self.labelsWidget, self.folderNameLabel, self.nbElementsLabel)
+        self.interiorWidgets = (self.iconLabel, self.labelsWidget, self.folderNameLabel, self.nbElementsLabel, self.removeButton)
         self.updateStyle("border-radius", "10px")
         self.updateStyle("border", "2px solid rgba(0, 0, 0, 0)")
         self.setMouseTracking(True)
@@ -193,11 +203,12 @@ class FolderWidget(qtw.QFrame):
 class MusicWidget(qtw.QFrame):
     """a widget that displays a music and its infos in the panel"""
     wasSelected = QtCore.pyqtSignal(Path) # signal emitted when the music is selected
-    isSelected = False  # track if the music is selected
-    dictStyle = {}  # dictionary of styles for the music widget
 
     def __init__(self, musicPath:Path, parent=None):
         super().__init__(parent)
+        # some variables
+        self.isSelected = False  # track if the music is selected
+        self.dictStyle = {}  # dictionary of styles for the music widget
 
         # main layout
         self.musicPath = musicPath
@@ -260,6 +271,8 @@ class MusicWidget(qtw.QFrame):
             audioFile = eyed3.load(str(self.musicPath))
             if audioFile.tag is None:
                 audioFile.initTag()
+            if audioFile.tag.title:
+                self.musicNameLabel.setText(audioFile.tag.title)
             self.authorLabel.setText(audioFile.tag.artist)
             if audioFile.tag.images:
                 # display the cover image

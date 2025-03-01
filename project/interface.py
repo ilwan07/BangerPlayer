@@ -3,6 +3,8 @@ from widgets import *
 import PyQt5.QtWidgets as qtw
 from PyQt5 import QtCore, QtGui
 import logging
+import glob
+import json
 
 log = logging.getLogger(__name__)
 
@@ -292,4 +294,192 @@ class Window(qtw.QMainWindow):
 
     def setupInterface(self):
         """setup the main interface"""
-        return NotImplemented  #TODO
+        if not configFile.exists():
+            # if first launch
+            log.info("no config file found, creating initial config")
+            self.config = {
+                "folders": [str(Path.home() / "Music")] if (Path.home() / "Music").exists() else [],
+                "loop": False,
+                "shuffle": False,
+                "sort": "+name"
+            }
+            self.saveConfig()
+        self.config = json.load(open(configFile))
+        log.debug("loaded the config file")
+        
+        # show only necesary panels
+        self.musicsPanel.hide()
+        self.playerPanel.hide()
+        log.debug("hided the musics and player panels")
+
+        # useful variables
+        self.folderWidgets = []
+        self.musicWidgets = []
+
+        self.currentFolder = None
+        self.currentMusic = None
+        self.musicPlaying = False
+        self.loopMode = self.config["loop"]
+        self.shuffleMode = self.config["shuffle"]
+        self.sortMode = self.config["sort"]
+        self.musicTime = 0
+        self.musicTotalTime = 0
+        log.debug("set the variables")
+
+        # connect signals
+        self.addFolderButton.clicked.connect(self.addFolder)
+        self.globalPlayButton.clicked.connect(self.globalPlay)
+        self.loopButton.clicked.connect(self.loopState)
+        self.shuffleButton.clicked.connect(self.shuffleState)
+        self.sortButton.clicked.connect(self.sortState)
+        self.musicPlayButton.clicked.connect(self.musicPlay)
+        self.musicProgressBar.clickedValue.connect(self.musicSliderPressed)
+        self.renameButton.clicked.connect(self.renameMusic)
+        self.setAuthorButton.clicked.connect(self.setAuthor)
+        self.setCoverButton.clicked.connect(self.setCover)
+        log.debug("connected signals")
+
+        # load the folders
+        self.loadFolders()
+        log.info("interface setup done")
+    
+    def saveConfig(self):
+        """save the config to the config file"""
+        with open(configFile, "w") as f:
+            json.dump(self.config, f, indent=4)
+        log.debug("saved the config file")
+    
+    def loadFolders(self):
+        """load the folders from the config file into the interface"""
+        # remove the previous folders
+        for widget in self.folderWidgets:
+            widget.deleteLater()
+        
+        # load the folders
+        self.folderWidgets = []
+        for folder in self.config["folders"]:
+            self.folderWidgets.append(FolderWidget(Path(folder)))
+            self.folderWidgets[-1].wasSelected.connect(self.selectFolder)
+            self.folderWidgets[-1].wasRemoved.connect(self.removeFolder)
+            self.foldersListLayout.addWidget(self.folderWidgets[-1])
+        log.debug("loaded the folders")
+    
+    def selectFolder(self, folder:Path):
+        """select a folder and show its musics"""
+        if self.currentFolder == folder:
+            return  # do nothing if the folder is already selected
+        # unselect the previous folder
+        for widget in self.folderWidgets:
+            if widget.folderPath != folder:
+                widget.setSelected(False)
+        self.currentFolder = folder
+        # update the interface with the new folder
+        self.musicsPanel.show()
+        self.playerPanel.hide()
+        self.loadMusics()
+    
+    def removeFolder(self, folder:Path):
+        """remove a folder from the folders list"""
+        confirm = qtw.QMessageBox.warning(self, "Remove Folder", f'Are you sure you want to remove "{folder}"?\nNote: this won\'t delete the folder itself, just remove it from the list', qtw.QMessageBox.Yes | qtw.QMessageBox.Cancel)
+        if confirm == qtw.QMessageBox.Yes:
+            for i in range(len(self.config["folders"])):
+                if Path(self.config["folders"][i]) == folder:
+                    self.config["folders"].pop(i)
+            self.saveConfig()
+            if self.currentFolder == folder:
+                self.currentFolder = None
+                self.currentMusic = None
+                self.musicsPanel.hide()
+                self.playerPanel.hide()
+            self.loadFolders()
+            log.info(f"removed the folder {folder}")
+    
+    def loadMusics(self):
+        """list and load the musics from the selected folder"""
+        # remove the previous musics
+        for widget in self.musicWidgets:
+            widget.deleteLater()
+        self.musicWidgets = []
+
+        # list the musics
+        musics = []
+        for dir in glob.glob(str(self.currentFolder/"*")):
+            if Path(dir).is_file() and Path(dir).suffix in supportedAudioFormats:
+                musics.append(Path(dir))
+        log.debug(f"listed the musics for the folder {self.currentFolder}")
+
+        # update the folder name and number of elements
+        self.folderNameLabel.setText(self.currentFolder.name)
+        self.folderElementsLabel.setText(f"{len(musics)} Musics")
+
+        # load the music widgets
+        for music in musics:
+            self.musicWidgets.append(MusicWidget(music))
+            self.musicWidgets[-1].wasSelected.connect(self.selectMusic)
+            self.musicsListLayout.addWidget(self.musicWidgets[-1])
+        log.debug(f"loaded the musics for the folder {self.currentFolder}")
+    
+    def selectMusic(self, music:Path):
+        """select a music and show its details and player panel"""
+        if self.currentMusic == music:
+            return  # do nothing if the music is already selected
+        # unselect the previous music
+        for widget in self.musicWidgets:
+            if widget.musicPath != music:
+                widget.setSelected(False)
+        self.currentMusic = music
+        # update the interface with the new music
+        self.playerPanel.show()
+        self.updateMusicPlayer()
+    
+    def updateMusicPlayer(self):
+        """update the player panel with the selected music"""
+        pass
+    
+    def addFolder(self):
+        """add a folder to the folders list"""
+        # open a dialog to select a folder
+        folder = qtw.QFileDialog.getExistingDirectory(self, "Select music folder", str(Path.home()))
+        if not folder:
+            return  # do nothing if no folder was selected
+        # add the folder to the config and interface
+        self.config["folders"].append(folder)
+        self.saveConfig()
+        self.loadFolders()
+        log.info(f"added the folder {folder}")
+
+    def globalPlay(self):
+        """play or pause the music"""
+        pass
+
+    def loopState(self):
+        """change the loop state"""
+        pass
+
+    def shuffleState(self):
+        """change the shuffle state"""
+        pass
+
+    def sortState(self):
+        """change the sort state"""
+        pass
+
+    def musicPlay(self):
+        """play or pause the music"""
+        pass
+
+    def musicSliderPressed(self, value):
+        """change the music time"""
+        pass
+
+    def renameMusic(self):
+        """rename the music"""
+        pass
+
+    def setAuthor(self):
+        """set the music author"""
+        pass
+
+    def setCover(self):
+        """set the music cover"""
+        pass

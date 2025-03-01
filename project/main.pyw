@@ -1,4 +1,3 @@
-#TODO add volume control, previous/next, external api integration, bass booster
 from constants import *
 import interface
 import PyQt5.QtWidgets as qtw
