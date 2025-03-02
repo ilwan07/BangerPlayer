@@ -2,9 +2,12 @@ from constants import *
 from widgets import *
 import PyQt5.QtWidgets as qtw
 from PyQt5 import QtCore, QtGui
+from pathlib import Path
 import logging
+import eyed3
 import glob
 import json
+import vlc
 
 log = logging.getLogger(__name__)
 
@@ -254,21 +257,21 @@ class Window(qtw.QMainWindow):
         self.musicTimeWidget.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Fixed)
         self.progressBarLayout.addWidget(self.musicTimeWidget)
 
-        self.musicCurrentTime = qtw.QLabel("[0:00]")
-        self.musicCurrentTime.setFont(Fonts.bigTextFont)
-        self.musicTimeLayout.addWidget(self.musicCurrentTime)
+        self.musicCurrentTimeLabel = qtw.QLabel("[0:00]")
+        self.musicCurrentTimeLabel.setFont(Fonts.bigTextFont)
+        self.musicTimeLayout.addWidget(self.musicCurrentTimeLabel)
 
         self.musicTimeLayout.addStretch()
 
-        self.musicTotalTime = qtw.QLabel("[0:00]")
-        self.musicTotalTime.setFont(Fonts.bigTextFont)
-        self.musicTimeLayout.addWidget(self.musicTotalTime)
+        self.musicTotalTimeLabel = qtw.QLabel("[0:00]")
+        self.musicTotalTimeLabel.setFont(Fonts.bigTextFont)
+        self.musicTimeLayout.addWidget(self.musicTotalTimeLabel)
 
         # separator for the buttons below
         self.playerPanelLayout.addWidget(Separator(QtCore.Qt.Horizontal))
 
         # rename button
-        self.renameButton = qtw.QPushButton("Rename")
+        self.renameButton = qtw.QPushButton("Set Title")
         self.renameButton.setFont(Fonts.titleFont)
         self.renameButton.setFixedHeight(50)
         self.renameButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
@@ -322,7 +325,7 @@ class Window(qtw.QMainWindow):
         self.loopMode = self.config["loop"]
         self.shuffleMode = self.config["shuffle"]
         self.sortMode = self.config["sort"]
-        self.musicTime = 0
+        self.musicCurrentTime = 0
         self.musicTotalTime = 0
         log.debug("set the variables")
 
@@ -334,7 +337,7 @@ class Window(qtw.QMainWindow):
         self.sortButton.clicked.connect(self.sortState)
         self.musicPlayButton.clicked.connect(self.musicPlay)
         self.musicProgressBar.clickedValue.connect(self.musicSliderPressed)
-        self.renameButton.clicked.connect(self.renameMusic)
+        self.renameButton.clicked.connect(self.setTitle)
         self.setAuthorButton.clicked.connect(self.setAuthor)
         self.setCoverButton.clicked.connect(self.setCover)
         log.debug("connected signals")
@@ -373,6 +376,7 @@ class Window(qtw.QMainWindow):
             if widget.folderPath != folder:
                 widget.setSelected(False)
         self.currentFolder = folder
+        self.currentMusic = None
         # update the interface with the new folder
         self.musicsPanel.show()
         self.playerPanel.hide()
@@ -392,6 +396,12 @@ class Window(qtw.QMainWindow):
                 self.musicsPanel.hide()
                 self.playerPanel.hide()
             self.loadFolders()
+            # reselect the folder after the update
+            if self.currentFolder:
+                for widget in self.folderWidgets:
+                    if widget.folderPath == Path(self.currentFolder):
+                        widget.setSelected(True)
+                        break
             log.info(f"removed the folder {folder}")
     
     def loadMusics(self):
@@ -430,11 +440,41 @@ class Window(qtw.QMainWindow):
         self.currentMusic = music
         # update the interface with the new music
         self.playerPanel.show()
-        self.updateMusicPlayer()
+        self.updateMusicPlayer(music)
     
-    def updateMusicPlayer(self):
+    def updateMusicPlayer(self, music:Path):
         """update the player panel with the selected music"""
-        pass
+        # open the music metadata and get the info
+        audioFile = eyed3.load(music)
+        if audioFile.tag:
+            title = audioFile.tag.title if audioFile.tag.title else music.stem
+            artist = audioFile.tag.artist if audioFile.tag.artist else None
+            cover = audioFile.tag.images[0].image_data if audioFile.tag.images else None
+        else:
+            title = music.stem
+            artist = None
+            cover = None
+        media = vlc.Media(str(music))
+        media.parse()
+        duration = int(media.get_duration() / 1000)
+
+        self.currentMusicProperties = {"title": title, "artist": artist, "cover": cover, "duration": duration}
+        
+        # update the interface
+        self.musicTitle.setText(title)
+        if artist:
+            self.musicArtist.setText(artist)
+        else:
+            self.musicArtist.setText("")
+        if cover:
+            self.musicCover.setPixmap(QtGui.QPixmap.fromImage(QtGui.QImage.fromData(cover)))
+        else:
+            self.musicCover.setVector(themeAssetsDir / "icons" / "cover.svg")
+        self.musicProgressBar.setRange(0, duration)
+        self.musicProgressBar.setValue(0)
+        self.musicCurrentTimeLabel.setText("0:00")
+        self.musicTotalTimeLabel.setText(f"{duration//60}:{duration%60:02}")
+        log.debug(f"updated the player panel for the music {music}")
     
     def addFolder(self):
         """add a folder to the folders list"""
@@ -446,40 +486,117 @@ class Window(qtw.QMainWindow):
         self.config["folders"].append(folder)
         self.saveConfig()
         self.loadFolders()
+        # reselect the folder after the update
+        if self.currentFolder:
+            for widget in self.folderWidgets:
+                if widget.folderPath == Path(self.currentFolder):
+                    widget.setSelected(True)
+                    break
         log.info(f"added the folder {folder}")
 
     def globalPlay(self):
         """play or pause the music"""
-        pass
+        pass  #TODO
 
     def loopState(self):
         """change the loop state"""
-        pass
+        pass  #TODO
 
     def shuffleState(self):
         """change the shuffle state"""
-        pass
+        pass  #TODO
 
     def sortState(self):
         """change the sort state"""
-        pass
+        pass  #TODO
 
     def musicPlay(self):
         """play or pause the music"""
-        pass
+        pass  #TODO
 
     def musicSliderPressed(self, value):
         """change the music time"""
-        pass
+        value = round(value)
+        self.musicCurrentTime = value
+        # change the music time label
+        self.musicCurrentTimeLabel.setText(f"{value//60}:{value%60:02}")
+        pass  #TODO
 
-    def renameMusic(self):
-        """rename the music"""
-        pass
+
+    def setTitle(self):
+        """set the music title"""
+        # ask for the new title
+        title, ok = qtw.QInputDialog.getText(self, "Set Title", "Enter the new title:")
+        if not ok or not title:
+            return
+        musicPath = self.currentMusic
+
+        # change the metadata
+        audioFile = eyed3.load(self.currentMusic)
+        if audioFile.tag is None:
+            audioFile.initTag()
+        audioFile.tag.title = title
+        audioFile.tag.save()
+        self.loadMusics()
+        self.updateMusicPlayer(musicPath)
+        # reselect the music after the update
+        for widget in self.musicWidgets:
+            if widget.musicPath == musicPath:
+                widget.setSelected(True)
+                break
+        log.info(f"changed the title of the music to {title}")
 
     def setAuthor(self):
         """set the music author"""
-        pass
+        # ask for the new author
+        author, ok = qtw.QInputDialog.getText(self, "Set Author", "Enter the new author:")
+        if not ok or not author:
+            return
+        if "/" in author or "\\" in author:
+            qtw.QMessageBox.warning(self, "Invalid Input", "Author name cannot contain '/' or '\\' characters.")
+            return
+        if not ok or not author:
+            return
+        musicPath = self.currentMusic
+
+        # change the metadata
+        audioFile = eyed3.load(self.currentMusic)
+        if audioFile.tag is None:
+            audioFile.initTag()
+        audioFile.tag.artist = author
+        audioFile.tag.save()
+        self.loadMusics()
+        self.updateMusicPlayer(musicPath)
+        # reselect the music after the update
+        for widget in self.musicWidgets:
+            if widget.musicPath == musicPath:
+                widget.setSelected(True)
+                break
+        log.info(f"changed the author of the music to {author}")
 
     def setCover(self):
         """set the music cover"""
-        pass
+        # open a dialog to select an image
+        cover, _ = qtw.QFileDialog.getOpenFileName(self, "Select Cover", str(Path.home()), "Images (*.png *.jpg *.jpeg *.gif *.webp *.tiff)")
+        if not cover:
+            return
+        cover = Path(cover)
+        if not cover.exists():
+            qtw.QMessageBox.critical(self, "Error", "The selected file doesn't exist")
+            return
+        musicPath = self.currentMusic
+
+        # change the metadata
+        audioFile = eyed3.load(self.currentMusic)
+        if audioFile.tag is None:
+            audioFile.initTag()
+        mimetype = f"image/{'jpeg' if cover.suffix[1:] == 'jpg' else cover.suffix[1:]}"
+        audioFile.tag.images.set(eyed3.id3.frames.ImageFrame.FRONT_COVER, open(cover, "rb").read(), mimetype)
+        audioFile.tag.save()
+        self.loadMusics()
+        self.updateMusicPlayer(musicPath)
+        # reselect the music after the update
+        for widget in self.musicWidgets:
+            if widget.musicPath == musicPath:
+                widget.setSelected(True)
+                break

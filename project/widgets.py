@@ -33,34 +33,48 @@ class SquareVectorLabel(qtw.QLabel):
         self.setScaledContents(False)
 
     def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        rect = self.rect()
+        side = min(rect.width(), rect.height())
+        square_rect = QtCore.QRect(
+            (rect.width() - side) // 2,
+            (rect.height() - side) // 2,
+            side,
+            side,
+        )
+        
         if self.svgRender:
-            painter = QtGui.QPainter(self)
-            rect = self.rect()
-            # Determine the largest square that fits inside the widget.
-            side = min(rect.width(), rect.height())
-            square_rect = QtCore.QRect(
-                (rect.width() - side) // 2,
-                (rect.height() - side) // 2,
-                side,
-                side,
-            )
             painter.save()
-            # Optionally enable antialiasing for smoother rendering.
-            painter.setRenderHint(QtGui.QPainter.Antialiasing)
-            # Clip drawing to the square area.
             painter.setClipRect(square_rect)
-            # Move the painter’s origin to the top-left of the square.
             painter.translate(square_rect.topLeft())
-            # Render the SVG to fill the square area.
             self.svg_renderer.render(painter, QtCore.QRectF(0, 0, side, side))
             painter.restore()
         else:
-            super().paintEvent(event)
+            pixmap = self.pixmap()
+            if pixmap:
+                scaled_pixmap = pixmap.scaled(
+                    square_rect.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation
+                )
+                pixmap_rect = QtCore.QRect(
+                    square_rect.x() + (square_rect.width() - scaled_pixmap.width()) // 2,
+                    square_rect.y() + (square_rect.height() - scaled_pixmap.height()) // 2,
+                    scaled_pixmap.width(),
+                    scaled_pixmap.height(),
+                )
+                painter.drawPixmap(pixmap_rect, scaled_pixmap)
+        painter.end()
     
     def setPixmap(self, pixmap:QtGui.QPixmap):
         """if we set a pixmap, switch to the default behavior and deactivate the SVG renderer"""
         super().setPixmap(pixmap)
         self.svgRender = False
+    
+    def setVector(self, svgPath:Path):
+        """set the SVG image to display, reactivate the SVG renderer and update the widget"""
+        self.svg_renderer.load(str(svgPath))
+        self.svgRender = True
+        self.update()
 
 class MusicProgressBar(qtw.QProgressBar):
     """a progress bar that emits a signal with the selected value when clicked and extends when hovered"""
@@ -68,7 +82,7 @@ class MusicProgressBar(qtw.QProgressBar):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.normalSize:int = 8  # normal height of the progress bar
+        self.normalSize:int = 10  # normal height of the progress bar
         self.expandedSize:int = 30  # height of the progress bar when hovered
         self.setFixedHeight(self.normalSize)
         self.setTextVisible(False)
@@ -235,7 +249,7 @@ class MusicWidget(qtw.QFrame):
         self.labelsLayout.addWidget(self.musicNameLabel)
 
         # music author
-        self.authorLabel = qtw.QLabel()
+        self.authorLabel = qtw.QLabel("[Author]")
         self.authorLabel.setFont(Fonts.subtitleFont)
         self.labelsLayout.addWidget(self.authorLabel)
 
@@ -273,7 +287,10 @@ class MusicWidget(qtw.QFrame):
                 audioFile.initTag()
             if audioFile.tag.title:
                 self.musicNameLabel.setText(audioFile.tag.title)
-            self.authorLabel.setText(audioFile.tag.artist)
+            if audioFile.tag.artist:
+                self.authorLabel.setText(audioFile.tag.artist)
+            else:
+                self.authorLabel.setVisible(False)
             if audioFile.tag.images:
                 # display the cover image
                 coverImage = audioFile.tag.images[0]
