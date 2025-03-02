@@ -323,8 +323,9 @@ class Window(qtw.QMainWindow):
         self.currentFolder = None
         self.currentMusic = None
         self.musicPlaying = False
-        self.musicFirstPlay = True
         self.musicObject = None
+        self.progressTimer = QtCore.QTimer()
+        self.progressTimer.timeout.connect(self.updateMusicProgress)
         self.loopMode = self.config["loop"]
         self.shuffleMode = self.config["shuffle"]
         self.sortMode = self.config["sort"]
@@ -382,7 +383,6 @@ class Window(qtw.QMainWindow):
         self.currentMusic = None
         self.unloadMusic()
         self.musicPlaying = False
-        self.musicFirstPlay = True
         # update the interface with the new folder
         self.musicsPanel.show()
         self.playerPanel.hide()
@@ -401,7 +401,6 @@ class Window(qtw.QMainWindow):
                 self.currentMusic = None
                 self.unloadMusic()
                 self.musicPlaying = False
-                self.musicFirstPlay = True
                 self.musicsPanel.hide()
                 self.playerPanel.hide()
             self.loadFolders()
@@ -449,7 +448,6 @@ class Window(qtw.QMainWindow):
         self.currentMusic = music
         self.unloadMusic()
         self.musicPlaying = False
-        self.musicFirstPlay = True
         # update the interface with the new music
         self.playerPanel.show()
         self.updateMusicPlayer(music)
@@ -469,8 +467,19 @@ class Window(qtw.QMainWindow):
         media = vlc.Media(str(music))
         media.parse()
         duration = int(media.get_duration() / 1000)
-
         self.currentMusicProperties = {"title": title, "artist": artist, "cover": cover, "duration": duration}
+
+        # load the music
+        self.musicObject = vlc.MediaPlayer(str(music))
+        # start playing briefly to load the media
+        self.musicObject.audio_set_volume(0)
+        self.musicObject.play()
+        while not self.musicObject.get_state() == vlc.State.Playing:
+            pass
+        self.musicObject.pause()
+        self.musicObject.set_time(0)
+        self.musicObject.audio_set_volume(100)
+        log.debug(f"loaded the music")
         
         # update the interface
         self.musicTitle.setText(title)
@@ -529,20 +538,14 @@ class Window(qtw.QMainWindow):
             self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
             self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
             self.musicObject.pause()
+            self.progressTimer.stop()
             log.info("paused the music")
         else:
             self.musicPlaying = True
             self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
             self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
-            
-            # if first play, load the music
-            if self.musicFirstPlay:
-                # load the music with vlc
-                self.musicFirstPlay = False
-                self.musicObject = vlc.MediaPlayer(str(self.currentMusic))
-                self.musicObject.play()
-            else:
-                self.musicObject.play()
+            self.musicObject.play()
+            self.progressTimer.start(100)
             log.info("played the music")
     
     def unloadMusic(self):
@@ -560,14 +563,18 @@ class Window(qtw.QMainWindow):
         self.musicCurrentTime = value
         # change the music time label
         self.musicCurrentTimeLabel.setText(f"{value//60}:{value%60:02}")
-        self.updateMusicTime(value)
-        log.info(f"changed the music time to {value}")
-    
-    def updateMusicTime(self, value):
-        """update the music time"""
+        
+        # change the music time
         if self.musicObject:
             self.musicObject.set_time(value * 1000)
-            log.debug(f"updated the music time to {value}")
+        log.info(f"changed the music time to {value}")
+    
+    def updateMusicProgress(self):
+        """update the music progress bar"""
+        if self.musicObject:
+            currentTime = int(self.musicObject.get_time() / 1000)
+            self.musicProgressBar.setValue(currentTime)
+            self.musicCurrentTimeLabel.setText(f"{currentTime//60}:{currentTime%60:02}")
 
     def setTitle(self):
         """set the music title"""
