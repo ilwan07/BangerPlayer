@@ -545,7 +545,7 @@ class Window(qtw.QMainWindow):
             self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
             self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
             self.musicObject.play()
-            self.progressTimer.start(100)
+            self.progressTimer.start(10)
             log.info("played the music")
     
     def unloadMusic(self):
@@ -557,7 +557,7 @@ class Window(qtw.QMainWindow):
             self.musicObject.release()
             self.musicObject = None
 
-    def musicSliderPressed(self, value):
+    def musicSliderPressed(self, value:float):
         """change the music time"""
         value = round(value)
         self.musicCurrentTime = value
@@ -570,11 +570,19 @@ class Window(qtw.QMainWindow):
         log.info(f"changed the music time to {value}")
     
     def updateMusicProgress(self):
-        """update the music progress bar"""
+        """update the music progress bar and handles the end of the music"""
+        # update the progress bar
         if self.musicObject:
             currentTime = int(self.musicObject.get_time() / 1000)
             self.musicProgressBar.setValue(currentTime)
             self.musicCurrentTimeLabel.setText(f"{currentTime//60}:{currentTime%60:02}")
+        
+        # handle the end of the music
+        if self.musicObject.get_state() == vlc.State.Ended:
+            self.musicPlay()
+            # reload the music panel
+            self.updateMusicPlayer(self.currentMusic)
+            log.info("music ended")
 
     def setTitle(self):
         """set the music title"""
@@ -653,3 +661,12 @@ class Window(qtw.QMainWindow):
             if widget.musicPath == musicPath:
                 widget.setSelected(True)
                 break
+    
+    def keyPressEvent(self, event:QtGui.QKeyEvent):
+        """handle the key press events"""
+        # handle the space key to play/pause the music
+        if event.key() == QtCore.Qt.Key_Space and self.playerPanel.isVisible():
+            self.musicPlay()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
