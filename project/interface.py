@@ -304,7 +304,8 @@ class Window(qtw.QMainWindow):
                 "folders": [str(Path.home() / "Music")] if (Path.home() / "Music").exists() else [],
                 "loop": False,
                 "shuffle": False,
-                "sort": "+name"
+                "sort": "+name",
+                "autoplay": False
             }
             self.saveConfig()
         self.config = json.load(open(configFile))
@@ -322,6 +323,8 @@ class Window(qtw.QMainWindow):
         self.currentFolder = None
         self.currentMusic = None
         self.musicPlaying = False
+        self.musicFirstPlay = True
+        self.musicObject = None
         self.loopMode = self.config["loop"]
         self.shuffleMode = self.config["shuffle"]
         self.sortMode = self.config["sort"]
@@ -377,6 +380,9 @@ class Window(qtw.QMainWindow):
                 widget.setSelected(False)
         self.currentFolder = folder
         self.currentMusic = None
+        self.unloadMusic()
+        self.musicPlaying = False
+        self.musicFirstPlay = True
         # update the interface with the new folder
         self.musicsPanel.show()
         self.playerPanel.hide()
@@ -393,6 +399,9 @@ class Window(qtw.QMainWindow):
             if self.currentFolder == folder:
                 self.currentFolder = None
                 self.currentMusic = None
+                self.unloadMusic()
+                self.musicPlaying = False
+                self.musicFirstPlay = True
                 self.musicsPanel.hide()
                 self.playerPanel.hide()
             self.loadFolders()
@@ -438,6 +447,9 @@ class Window(qtw.QMainWindow):
             if widget.musicPath != music:
                 widget.setSelected(False)
         self.currentMusic = music
+        self.unloadMusic()
+        self.musicPlaying = False
+        self.musicFirstPlay = True
         # update the interface with the new music
         self.playerPanel.show()
         self.updateMusicPlayer(music)
@@ -512,7 +524,35 @@ class Window(qtw.QMainWindow):
 
     def musicPlay(self):
         """play or pause the music"""
-        pass  #TODO
+        if self.musicPlaying:
+            self.musicPlaying = False
+            self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
+            self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
+            self.musicObject.pause()
+            log.info("paused the music")
+        else:
+            self.musicPlaying = True
+            self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
+            self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
+            
+            # if first play, load the music
+            if self.musicFirstPlay:
+                # load the music with vlc
+                self.musicFirstPlay = False
+                self.musicObject = vlc.MediaPlayer(str(self.currentMusic))
+                self.musicObject.play()
+            else:
+                self.musicObject.play()
+            log.info("played the music")
+    
+    def unloadMusic(self):
+        """unload the music from the player"""
+        # stop playing if needed
+        if self.musicPlaying:
+            self.musicPlay()
+        if self.musicObject:
+            self.musicObject.release()
+            self.musicObject = None
 
     def musicSliderPressed(self, value):
         """change the music time"""
@@ -520,8 +560,14 @@ class Window(qtw.QMainWindow):
         self.musicCurrentTime = value
         # change the music time label
         self.musicCurrentTimeLabel.setText(f"{value//60}:{value%60:02}")
-        pass  #TODO
-
+        self.updateMusicTime(value)
+        log.info(f"changed the music time to {value}")
+    
+    def updateMusicTime(self, value):
+        """update the music time"""
+        if self.musicObject:
+            self.musicObject.set_time(value * 1000)
+            log.debug(f"updated the music time to {value}")
 
     def setTitle(self):
         """set the music title"""
