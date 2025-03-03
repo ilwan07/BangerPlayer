@@ -223,6 +223,9 @@ class MusicWidget(qtw.QFrame):
         # some variables
         self.isSelected = False  # track if the music is selected
         self.dictStyle = {}  # dictionary of styles for the music widget
+        self.title = musicPath.stem  # title of the music
+        self.author = None  # author of the music
+        self.coverImage = None  # cover image binary data of the music
 
         # main layout
         self.musicPath = musicPath
@@ -244,7 +247,7 @@ class MusicWidget(qtw.QFrame):
         self.mainLayout.addWidget(self.labelsWidget)
 
         # music name
-        self.musicNameLabel = qtw.QLabel(musicPath.stem)
+        self.musicNameLabel = qtw.QLabel(self.title)
         self.musicNameLabel.setFont(Fonts.titleFont)
         self.labelsLayout.addWidget(self.musicNameLabel)
 
@@ -286,16 +289,18 @@ class MusicWidget(qtw.QFrame):
             if audioFile.tag is None:
                 audioFile.initTag()
             if audioFile.tag.title:
-                self.musicNameLabel.setText(audioFile.tag.title)
+                self.title = audioFile.tag.title
+                self.musicNameLabel.setText(self.title)
             if audioFile.tag.artist:
-                self.authorLabel.setText(audioFile.tag.artist)
+                self.author = audioFile.tag.artist
+                self.authorLabel.setText(self.author)
             else:
                 self.authorLabel.setVisible(False)
             if audioFile.tag.images:
                 # display the cover image
-                coverImage = audioFile.tag.images[0]
+                self.coverImage = audioFile.tag.images[0]
                 coverPixmap = QtGui.QPixmap()
-                coverPixmap.loadFromData(coverImage.image_data)
+                coverPixmap.loadFromData(self.coverImage.image_data)
                 scaledPixmap = coverPixmap.scaled(self.coverLabel.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
                 self.coverLabel.setPixmap(scaledPixmap)
                 

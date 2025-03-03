@@ -174,13 +174,22 @@ class Window(qtw.QMainWindow):
 
         self.controlButtonsLayout.addStretch()
 
+        # autoplay button
+        self.autoplayButton = qtw.QPushButton()
+        self.autoplayButton.setFixedSize(40, 40)
+        self.autoplayButton.setCheckable(True)
+        self.autoplayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "autoplay.svg")))
+        self.autoplayButton.setIconSize(QtCore.QSize(30, 30))
+        self.autoplayButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.controlButtonsLayout.addWidget(self.autoplayButton)
+
         # sort button
         self.sortButton = qtw.QPushButton()
         self.sortButton.setFixedSize(40, 40)
         self.sortButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "sort.svg")))
         self.sortButton.setIconSize(QtCore.QSize(30, 30))
         self.sortButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        #self.controlButtonsLayout.addWidget(self.sortButton)  #TODO: implement this, hidden for now
+        self.controlButtonsLayout.addWidget(self.sortButton)
 
         log.debug("created the musics panel")
     
@@ -304,10 +313,11 @@ class Window(qtw.QMainWindow):
             log.info("no config file found, creating initial config")
             self.config = {
                 "folders": [str(Path.home() / "Music")] if (Path.home() / "Music").exists() else [],
-                "loop": False,
+                "last_folder": None,
+                "loop": "down",
                 "shuffle": False,
                 "sort": "+name",
-                "autoplay": False
+                "autoplay": True
             }
             self.saveConfig()
         self.config = json.load(open(configFile))
@@ -326,6 +336,7 @@ class Window(qtw.QMainWindow):
         else:
             self.loopButton.setChecked(True)
         self.shuffleButton.setChecked(self.config["shuffle"])
+        self.autoplayButton.setChecked(self.config["autoplay"])
         log.debug("set the buttons")
 
         # useful variables
@@ -340,6 +351,7 @@ class Window(qtw.QMainWindow):
         self.progressTimer.timeout.connect(self.updateMusicProgress)
         self.loopMode = self.config["loop"]
         self.shuffleMode = self.config["shuffle"]
+        self.autoplayMode = self.config["autoplay"]
         self.sortMode = self.config["sort"]
         self.musicCurrentTime = 0
         self.musicTotalTime = 0
@@ -351,6 +363,7 @@ class Window(qtw.QMainWindow):
         self.globalPlayButton.clicked.connect(self.globalPlay)
         self.loopButton.clicked.connect(self.loopState)
         self.shuffleButton.clicked.connect(self.shuffleState)
+        self.autoplayButton.clicked.connect(self.autoplayState)
         self.sortButton.clicked.connect(self.sortState)
         self.musicPlayButton.clicked.connect(self.musicPlay)
         self.musicProgressBar.clickedValue.connect(self.musicSliderPressed)
@@ -361,6 +374,13 @@ class Window(qtw.QMainWindow):
 
         # load the folders
         self.loadFolders()
+
+        # reselect the last folder
+        if self.config["last_folder"]:
+            for widget in self.folderWidgets:
+                if widget.folderPath == Path(self.config["last_folder"]):
+                    widget.setSelected(True)
+                    break
         log.info("interface setup done")
     
     def saveConfig(self):
@@ -401,6 +421,8 @@ class Window(qtw.QMainWindow):
         self.musicsPanel.show()
         self.playerPanel.hide()
         self.loadMusics()
+        self.config["last_folder"] = str(folder)
+        self.saveConfig()
     
     def removeFolder(self, folder:Path):
         """remove a folder from the folders list"""
@@ -418,6 +440,7 @@ class Window(qtw.QMainWindow):
                 self.musicPlaying = False
                 self.musicsPanel.hide()
                 self.playerPanel.hide()
+                self.config["last_folder"] = None
             self.loadFolders()
             # reselect the folder after the update
             if self.currentFolder:
@@ -452,7 +475,7 @@ class Window(qtw.QMainWindow):
             self.musicsListLayout.addWidget(self.musicWidgets[-1])
         log.debug(f"loaded the musics for the folder {self.currentFolder}")
     
-    def selectMusic(self, music:Path):
+    def selectMusic(self, music:Path, auto:bool=False):
         """select a music and show its details and player panel"""
         if self.currentMusic == music:
             return  # do nothing if the music is already selected
@@ -466,19 +489,21 @@ class Window(qtw.QMainWindow):
         # update the interface with the new music
         self.playerPanel.show()
         self.updateMusicPlayer(music)
+        if self.autoplayMode and not auto:
+            self.musicPlay()
+        log.debug(f"selected the music {music}")
     
     def updateMusicPlayer(self, music:Path):
         """update the player panel with the selected music"""
-        # open the music metadata and get the info
-        audioFile = eyed3.load(music)
-        if audioFile.tag:
-            title = audioFile.tag.title if audioFile.tag.title else music.stem
-            artist = audioFile.tag.artist if audioFile.tag.artist else None
-            cover = audioFile.tag.images[0].image_data if audioFile.tag.images else None
-        else:
-            title = music.stem
-            artist = None
-            cover = None
+        # get the metadata from the music widget
+        for widget in self.musicWidgets:
+            if widget.musicPath == music:
+                title = widget.title
+                artist = widget.author
+                cover = widget.coverImage
+                if cover:
+                    cover = cover.image_data
+                break
         media = vlc.Media(str(music))
         media.parse()
         duration = int(media.get_duration() / 1000)
@@ -571,6 +596,19 @@ class Window(qtw.QMainWindow):
             self.shuffleButton.setChecked(True)
             self.config["shuffle"] = True
             self.saveConfig()
+    
+    def autoplayState(self):
+        """change the autoplay state"""
+        if self.autoplayMode:
+            self.autoplayMode = False
+            self.autoplayButton.setChecked(False)
+            self.config["autoplay"] = False
+            self.saveConfig()
+        else:
+            self.autoplayMode = True
+            self.autoplayButton.setChecked(True)
+            self.config["autoplay"] = True
+            self.saveConfig()
 
     def sortState(self):
         """change the sort state"""
@@ -602,7 +640,7 @@ class Window(qtw.QMainWindow):
                 music = rd.choice(self.musicWidgets)
             else:
                 music = self.musicWidgets[0]
-            self.selectMusic(music.musicPath)
+            self.selectMusic(music.musicPath, auto=True)
             music.setSelected(True)
             self.musicPlay()
     
@@ -655,7 +693,7 @@ class Window(qtw.QMainWindow):
                         self.alreadyPlayed = []
                     else:
                         music = rd.choice(candidates)
-                        self.selectMusic(music.musicPath)
+                        self.selectMusic(music.musicPath, auto=True)
                         music.setSelected(True)
                         self.musicPlay()
 
@@ -664,13 +702,13 @@ class Window(qtw.QMainWindow):
                         if self.musicWidgets[i].musicPath == self.currentMusic:
                             if i == len(self.musicWidgets) - 1:
                                 if self.loopMode == "all":  # restart if reached the end
-                                    self.selectMusic(self.musicWidgets[0].musicPath)
+                                    self.selectMusic(self.musicWidgets[0].musicPath, auto=True)
                                     self.musicWidgets[0].setSelected(True)
                                     self.musicPlay()
                                 else:
                                     self.updateMusicPlayer(self.musicWidgets[i].musicPath)  # stop if reached the end
                             else:
-                                self.selectMusic(self.musicWidgets[i+1].musicPath)
+                                self.selectMusic(self.musicWidgets[i+1].musicPath, auto=True)
                                 self.musicWidgets[i+1].setSelected(True)
                                 self.musicPlay()
                             break
