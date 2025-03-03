@@ -3,6 +3,7 @@ from widgets import *
 import PyQt5.QtWidgets as qtw
 from PyQt5 import QtCore, QtGui
 from pathlib import Path
+import random as rd
 import logging
 import eyed3
 import glob
@@ -334,6 +335,7 @@ class Window(qtw.QMainWindow):
         self.sortMode = self.config["sort"]
         self.musicCurrentTime = 0
         self.musicTotalTime = 0
+        self.alreadyPlayed = []
         log.debug("set the variables")
 
         # connect signals
@@ -382,6 +384,7 @@ class Window(qtw.QMainWindow):
             if widget.folderPath != folder:
                 widget.setSelected(False)
         self.currentFolder = folder
+        self.alreadyPlayed = []
         self.currentMusic = None
         self.unloadMusic()
         self.musicPlaying = False
@@ -400,6 +403,7 @@ class Window(qtw.QMainWindow):
             self.saveConfig()
             if self.currentFolder == folder:
                 self.currentFolder = None
+                self.alreadyPlayed = []
                 self.currentMusic = None
                 self.unloadMusic()
                 self.musicPlaying = False
@@ -469,7 +473,6 @@ class Window(qtw.QMainWindow):
         media = vlc.Media(str(music))
         media.parse()
         duration = int(media.get_duration() / 1000)
-        self.currentMusicProperties = {"title": title, "artist": artist, "cover": cover, "duration": duration}
 
         # load the music
         self.musicObject = vlc.MediaPlayer(str(music))
@@ -562,7 +565,7 @@ class Window(qtw.QMainWindow):
 
     def sortState(self):
         """change the sort state"""
-        pass  #TODO
+        return NotImplemented  #TODO: implement this
 
     def musicPlay(self):
         """play or pause the music"""
@@ -610,10 +613,38 @@ class Window(qtw.QMainWindow):
         
         # handle the end of the music
         if self.musicObject.get_state() == vlc.State.Ended:
-            self.musicPlay()
-            # reload the music panel
-            self.updateMusicPlayer(self.currentMusic)
-            log.info("music ended")
+            self.musicPlay()  # stop the music
+
+            if self.loopMode == False:  # simply stop the music
+                self.updateMusicPlayer(self.currentMusic)
+            
+            elif self.loopMode == "one":  # restart the music
+                self.updateMusicPlayer(self.currentMusic)
+                self.musicPlay()
+            
+            elif self.loopMode == "down":
+                if self.shuffleMode:  # play a random music that hasn't been played before
+                    self.alreadyPlayed.append(self.currentMusic)
+                    candidates = [music for music in self.musicWidgets if music.musicPath not in self.alreadyPlayed]
+                    if not candidates:  # stop there is every music was played once
+                        self.updateMusicPlayer(self.currentMusic)
+                        self.alreadyPlayed = []
+                    else:
+                        music = rd.choice(candidates)
+                        self.selectMusic(music.musicPath)
+                        music.setSelected(True)
+                        self.musicPlay()
+
+                else:  # play the next music
+                    for i in range(len(self.musicWidgets)):
+                        if self.musicWidgets[i].musicPath == self.currentMusic:
+                            if i == len(self.musicWidgets) - 1:
+                                self.updateMusicPlayer(self.musicWidgets[i].musicPath)  # stop if reached the end
+                            else:
+                                self.selectMusic(self.musicWidgets[i+1].musicPath)
+                                self.musicWidgets[i+1].setSelected(True)
+                                self.musicPlay()
+                            break
 
     def setTitle(self):
         """set the music title"""
