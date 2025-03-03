@@ -1,6 +1,6 @@
 # BangerPlayer
 
-### A desktop music player app build with Python
+#### A desktop music player app build with Python
 
 ---
 
@@ -28,20 +28,20 @@ Simply open the app, and add use the button at the top to add your music folders
 
 After opening a folder, there is multiple buttons at the bottom. From left to right:
 
-###### Global play button: Use this button to play/pause the music, this will select one if it's not already the case.
+#### Global play button: Use this button to play/pause the music, this will select one if it's not already the case.
 
-###### Loop mode:
+#### Loop mode:
 
 - No loop (crossed out icon): Will play the music once, then stop.
 - Play everything once (default, loop with down arrow): Will play every music once, in a relevant order.
 - Play one on repeat (loop with a "1" inside): Will play the selected music on repeat.
 - Repeat forever (loop icon): Will play every music indefinitely
 
-###### Shuffle: If enabled, will play the musics in a random order (relevant only for the "play everything once" and repeat forever" loop modes), else the musics will play in order as defined by the loop mode.
+#### Shuffle: If enabled, will play the musics in a random order (relevant only for the "play everything once" and repeat forever" loop modes), else the musics will play in order as defined by the loop mode.
 
-###### Autoplay: If enabled, will automatically start playing a music when selected.
+#### Autoplay: If enabled, will automatically start playing a music when selected.
 
-###### Sorting:
+#### Sorting:
 
 There are 3 sorting modes, each with ascending or descending order:
 
