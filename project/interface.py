@@ -147,6 +147,14 @@ class Window(qtw.QMainWindow):
         self.controlButtonsLayout.setAlignment(QtCore.Qt.AlignLeft)
         self.musicsPanelLayout.addWidget(self.controlButtonsWidget)
 
+        # play pause button
+        self.globalPlayButton = qtw.QPushButton()
+        self.globalPlayButton.setFixedSize(40, 40)
+        self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
+        self.globalPlayButton.setIconSize(QtCore.QSize(30, 30))
+        self.globalPlayButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.controlButtonsLayout.addWidget(self.globalPlayButton)
+
         # loop button
         self.loopButton = qtw.QPushButton()
         self.loopButton.setFixedSize(40, 40)
@@ -340,6 +348,7 @@ class Window(qtw.QMainWindow):
 
         # connect signals
         self.addFolderButton.clicked.connect(self.addFolder)
+        self.globalPlayButton.clicked.connect(self.globalPlay)
         self.loopButton.clicked.connect(self.loopState)
         self.shuffleButton.clicked.connect(self.shuffleState)
         self.sortButton.clicked.connect(self.sortState)
@@ -572,15 +581,30 @@ class Window(qtw.QMainWindow):
         if self.musicPlaying:
             self.musicPlaying = False
             self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
+            self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
             self.musicObject.pause()
             self.progressTimer.stop()
             log.info("paused the music")
         else:
             self.musicPlaying = True
             self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
+            self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
             self.musicObject.play()
             self.progressTimer.start(10)
             log.info("played the music")
+    
+    def globalPlay(self):
+        """play or pause the music from the global play button"""
+        if self.playerPanel.isVisible():  # act as the basic play/pause button if the player panel is visible
+            self.musicPlay()
+        else:  # play the first or a random music if the player panel is hidden
+            if self.shuffleMode:
+                music = rd.choice(self.musicWidgets)
+            else:
+                music = self.musicWidgets[0]
+            self.selectMusic(music.musicPath)
+            music.setSelected(True)
+            self.musicPlay()
     
     def unloadMusic(self):
         """unload the music from the player"""
@@ -622,11 +646,11 @@ class Window(qtw.QMainWindow):
                 self.updateMusicPlayer(self.currentMusic)
                 self.musicPlay()
             
-            elif self.loopMode == "down":
-                if self.shuffleMode:  # play a random music that hasn't been played before
+            elif self.loopMode == "down" or self.loopMode == "all":  # play the next music or a random one, all restarts at the beginning when reached the end
+                if self.shuffleMode:  # play a random music
                     self.alreadyPlayed.append(self.currentMusic)
-                    candidates = [music for music in self.musicWidgets if music.musicPath not in self.alreadyPlayed]
-                    if not candidates:  # stop there is every music was played once
+                    candidates = [music for music in self.musicWidgets if ((music.musicPath not in self.alreadyPlayed) or (self.loopMode == "all")) and music.musicPath != self.currentMusic]  # if down, choose candidates, else take the whole list without the current music
+                    if not candidates:  # stop there is there's no more music to play
                         self.updateMusicPlayer(self.currentMusic)
                         self.alreadyPlayed = []
                     else:
@@ -639,7 +663,12 @@ class Window(qtw.QMainWindow):
                     for i in range(len(self.musicWidgets)):
                         if self.musicWidgets[i].musicPath == self.currentMusic:
                             if i == len(self.musicWidgets) - 1:
-                                self.updateMusicPlayer(self.musicWidgets[i].musicPath)  # stop if reached the end
+                                if self.loopMode == "all":  # restart if reached the end
+                                    self.selectMusic(self.musicWidgets[0].musicPath)
+                                    self.musicWidgets[0].setSelected(True)
+                                    self.musicPlay()
+                                else:
+                                    self.updateMusicPlayer(self.musicWidgets[i].musicPath)  # stop if reached the end
                             else:
                                 self.selectMusic(self.musicWidgets[i+1].musicPath)
                                 self.musicWidgets[i+1].setSelected(True)
