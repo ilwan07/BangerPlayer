@@ -186,7 +186,6 @@ class Window(qtw.QMainWindow):
         # sort button
         self.sortButton = qtw.QPushButton()
         self.sortButton.setFixedSize(40, 40)
-        self.sortButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "sort.svg")))
         self.sortButton.setIconSize(QtCore.QSize(30, 30))
         self.sortButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.controlButtonsLayout.addWidget(self.sortButton)
@@ -329,14 +328,15 @@ class Window(qtw.QMainWindow):
         log.debug("hided the musics and player panels")
 
         # set the buttons
-        loopIcon = "loop_none.svg" if self.config["loop"] == False else "loop_down.svg" if self.config["loop"] == "down" else "loop_one.svg" if self.config["loop"] == "one" else "loop.svg"
-        self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / loopIcon)))
+        self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop" / f"{self.config['loop']}.svg")))
         if self.config["loop"] == False:
             self.loopButton.setChecked(False)
         else:
             self.loopButton.setChecked(True)
         self.shuffleButton.setChecked(self.config["shuffle"])
         self.autoplayButton.setChecked(self.config["autoplay"])
+        sortIconPath = themeAssetsDir / "icons" / "sort" / ("up" if self.config["sort"][0] == "+" else "down") / f"{self.config['sort'][1:]}.svg"
+        self.sortButton.setIcon(QtGui.QIcon(str(sortIconPath)))
         log.debug("set the buttons")
 
         # useful variables
@@ -556,33 +556,18 @@ class Window(qtw.QMainWindow):
 
     def loopState(self):
         """change the loop state"""
-        if self.loopMode == False:
+        if self.loopMode == "none":
             self.loopMode = "down"  # play from top to bottom until the end, or play everything once if shuffle is on
-            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop_down.svg")))
-            self.loopButton.setChecked(True)
-            self.config["loop"] = "down"
-            self.saveConfig()
-
         elif self.loopMode == "down":
             self.loopMode = "one"  # play the current music on repeat
-            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop_one.svg")))
-            self.loopButton.setChecked(True)
-            self.config["loop"] = "one"
-            self.saveConfig()
-
         elif self.loopMode == "one":
             self.loopMode = "all"  # play everything on repeat, or play a random music on repeat if shuffle is on
-            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop.svg")))
-            self.loopButton.setChecked(True)
-            self.config["loop"] = "all"
-            self.saveConfig()
-
         else:
-            self.loopMode = False  # play until the end of the music then stop
-            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop_none.svg")))
-            self.loopButton.setChecked(False)
-            self.config["loop"] = False
-            self.saveConfig()
+            self.loopMode = "none"  # play until the end of the music then stop
+        self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop" / f"{self.loopMode}.svg")))
+        self.loopButton.setChecked(self.loopMode != "none")
+        self.config["loop"] = self.loopMode
+        self.saveConfig()
 
     def shuffleState(self):
         """change the shuffle state"""
@@ -612,7 +597,17 @@ class Window(qtw.QMainWindow):
 
     def sortState(self):
         """change the sort state"""
-        return NotImplemented  #TODO: implement this
+        if self.sortMode[0] == "+":
+            self.sortMode = f"-{self.sortMode[1:]}"
+        else:
+            if self.sortMode == "-name":
+                self.sortMode = "+author"
+            elif self.sortMode == "-author":
+                self.sortMode = "+time"
+            else:
+                self.sortMode = "+name"
+        sortIconPath = themeAssetsDir / "icons" / "sort" / ("up" if self.sortMode[0] == "+" else "down") / f"{self.sortMode[1:]}.svg"
+        self.sortButton.setIcon(QtGui.QIcon(str(sortIconPath)))
 
     def musicPlay(self):
         """play or pause the music"""
@@ -677,7 +672,7 @@ class Window(qtw.QMainWindow):
         if self.musicObject.get_state() == vlc.State.Ended:
             self.musicPlay()  # stop the music
 
-            if self.loopMode == False:  # simply stop the music
+            if self.loopMode == "none":  # simply stop the music
                 self.updateMusicPlayer(self.currentMusic)
             
             elif self.loopMode == "one":  # restart the music
