@@ -146,18 +146,10 @@ class Window(qtw.QMainWindow):
         self.controlButtonsLayout.setAlignment(QtCore.Qt.AlignLeft)
         self.musicsPanelLayout.addWidget(self.controlButtonsWidget)
 
-        # play pause button
-        self.globalPlayButton = qtw.QPushButton()
-        self.globalPlayButton.setFixedSize(40, 40)
-        self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
-        self.globalPlayButton.setIconSize(QtCore.QSize(30, 30))
-        self.globalPlayButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.controlButtonsLayout.addWidget(self.globalPlayButton)
-
         # loop button
         self.loopButton = qtw.QPushButton()
         self.loopButton.setFixedSize(40, 40)
-        self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop.svg")))
+        self.loopButton.setCheckable(True)
         self.loopButton.setIconSize(QtCore.QSize(30, 30))
         self.loopButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.controlButtonsLayout.addWidget(self.loopButton)
@@ -165,6 +157,7 @@ class Window(qtw.QMainWindow):
         # shuffle button
         self.shuffleButton = qtw.QPushButton()
         self.shuffleButton.setFixedSize(40, 40)
+        self.shuffleButton.setCheckable(True)
         self.shuffleButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "shuffle.svg")))
         self.shuffleButton.setIconSize(QtCore.QSize(30, 30))
         self.shuffleButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
@@ -178,7 +171,7 @@ class Window(qtw.QMainWindow):
         self.sortButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "sort.svg")))
         self.sortButton.setIconSize(QtCore.QSize(30, 30))
         self.sortButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.controlButtonsLayout.addWidget(self.sortButton)
+        #self.controlButtonsLayout.addWidget(self.sortButton)  #TODO: implement this, hidden for now
 
         log.debug("created the musics panel")
     
@@ -316,6 +309,16 @@ class Window(qtw.QMainWindow):
         self.playerPanel.hide()
         log.debug("hided the musics and player panels")
 
+        # set the buttons
+        loopIcon = "loop_none.svg" if self.config["loop"] == False else "loop_down.svg" if self.config["loop"] == "down" else "loop_one.svg" if self.config["loop"] == "one" else "loop.svg"
+        self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / loopIcon)))
+        if self.config["loop"] == False:
+            self.loopButton.setChecked(False)
+        else:
+            self.loopButton.setChecked(True)
+        self.shuffleButton.setChecked(self.config["shuffle"])
+        log.debug("set the buttons")
+
         # useful variables
         self.folderWidgets = []
         self.musicWidgets = []
@@ -335,7 +338,6 @@ class Window(qtw.QMainWindow):
 
         # connect signals
         self.addFolderButton.clicked.connect(self.addFolder)
-        self.globalPlayButton.clicked.connect(self.globalPlay)
         self.loopButton.clicked.connect(self.loopState)
         self.shuffleButton.clicked.connect(self.shuffleState)
         self.sortButton.clicked.connect(self.sortState)
@@ -515,17 +517,48 @@ class Window(qtw.QMainWindow):
                     break
         log.info(f"added the folder {folder}")
 
-    def globalPlay(self):
-        """play or pause the music"""
-        pass  #TODO
-
     def loopState(self):
         """change the loop state"""
-        pass  #TODO
+        if self.loopMode == False:
+            self.loopMode = "down"  # play from top to bottom until the end, or play everything once if shuffle is on
+            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop_down.svg")))
+            self.loopButton.setChecked(True)
+            self.config["loop"] = "down"
+            self.saveConfig()
+
+        elif self.loopMode == "down":
+            self.loopMode = "one"  # play the current music on repeat
+            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop_one.svg")))
+            self.loopButton.setChecked(True)
+            self.config["loop"] = "one"
+            self.saveConfig()
+
+        elif self.loopMode == "one":
+            self.loopMode = "all"  # play everything on repeat, or play a random music on repeat if shuffle is on
+            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop.svg")))
+            self.loopButton.setChecked(True)
+            self.config["loop"] = "all"
+            self.saveConfig()
+
+        else:
+            self.loopMode = False  # play until the end of the music then stop
+            self.loopButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "loop_none.svg")))
+            self.loopButton.setChecked(False)
+            self.config["loop"] = False
+            self.saveConfig()
 
     def shuffleState(self):
         """change the shuffle state"""
-        pass  #TODO
+        if self.shuffleMode:
+            self.shuffleMode = False
+            self.shuffleButton.setChecked(False)
+            self.config["shuffle"] = False
+            self.saveConfig()
+        else:
+            self.shuffleMode = True
+            self.shuffleButton.setChecked(True)
+            self.config["shuffle"] = True
+            self.saveConfig()
 
     def sortState(self):
         """change the sort state"""
@@ -536,14 +569,12 @@ class Window(qtw.QMainWindow):
         if self.musicPlaying:
             self.musicPlaying = False
             self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
-            self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "play.svg")))
             self.musicObject.pause()
             self.progressTimer.stop()
             log.info("paused the music")
         else:
             self.musicPlaying = True
             self.musicPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
-            self.globalPlayButton.setIcon(QtGui.QIcon(str(themeAssetsDir / "icons" / "pause.svg")))
             self.musicObject.play()
             self.progressTimer.start(10)
             log.info("played the music")
