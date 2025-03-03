@@ -281,11 +281,11 @@ class Window(qtw.QMainWindow):
         self.playerPanelLayout.addWidget(Separator(QtCore.Qt.Horizontal))
 
         # rename button
-        self.renameButton = qtw.QPushButton("Set Title")
-        self.renameButton.setFont(Fonts.titleFont)
-        self.renameButton.setFixedHeight(50)
-        self.renameButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.playerPanelLayout.addWidget(self.renameButton)
+        self.setTitleButton = qtw.QPushButton("Set Title")
+        self.setTitleButton.setFont(Fonts.titleFont)
+        self.setTitleButton.setFixedHeight(50)
+        self.setTitleButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.playerPanelLayout.addWidget(self.setTitleButton)
 
         # set author button
         self.setAuthorButton = qtw.QPushButton("Set Author")
@@ -367,7 +367,7 @@ class Window(qtw.QMainWindow):
         self.sortButton.clicked.connect(self.sortState)
         self.musicPlayButton.clicked.connect(self.musicPlay)
         self.musicProgressBar.clickedValue.connect(self.musicSliderPressed)
-        self.renameButton.clicked.connect(self.setTitle)
+        self.setTitleButton.clicked.connect(self.setTitle)
         self.setAuthorButton.clicked.connect(self.setAuthor)
         self.setCoverButton.clicked.connect(self.setCover)
         log.debug("connected signals")
@@ -738,8 +738,18 @@ class Window(qtw.QMainWindow):
             audioFile.initTag()
         audioFile.tag.title = title
         audioFile.tag.save()
+        # save some infos on the music
+        wasPlaying = self.musicPlaying
+        if self.musicPlaying:
+            self.musicPlay()
+            time = self.musicObject.get_time()
+        # reload the musics
         self.loadMusics()
         self.updateMusicPlayer(musicPath)
+        # reenable the music
+        if wasPlaying:
+            self.musicPlay()
+            self.musicObject.set_time(time)
         # reselect the music after the update
         for widget in self.musicWidgets:
             if widget.musicPath == musicPath:
@@ -766,8 +776,18 @@ class Window(qtw.QMainWindow):
             audioFile.initTag()
         audioFile.tag.artist = author
         audioFile.tag.save()
+         # save some infos on the music
+        wasPlaying = self.musicPlaying
+        if self.musicPlaying:
+            self.musicPlay()
+            time = self.musicObject.get_time()
+        # reload the musics
         self.loadMusics()
         self.updateMusicPlayer(musicPath)
+        # reenable the music
+        if wasPlaying:
+            self.musicPlay()
+            self.musicObject.set_time(time)
         # reselect the music after the update
         for widget in self.musicWidgets:
             if widget.musicPath == musicPath:
@@ -794,8 +814,18 @@ class Window(qtw.QMainWindow):
         mimetype = f"image/{'jpeg' if cover.suffix[1:] == 'jpg' else cover.suffix[1:]}"
         audioFile.tag.images.set(eyed3.id3.frames.ImageFrame.FRONT_COVER, open(cover, "rb").read(), mimetype)
         audioFile.tag.save()
+         # save some infos on the music
+        wasPlaying = self.musicPlaying
+        if self.musicPlaying:
+            self.musicPlay()
+            time = self.musicObject.get_time()
+        # reload the musics
         self.loadMusics()
         self.updateMusicPlayer(musicPath)
+        # reenable the music
+        if wasPlaying:
+            self.musicPlay()
+            self.musicObject.set_time(time)
         # reselect the music after the update
         for widget in self.musicWidgets:
             if widget.musicPath == musicPath:
