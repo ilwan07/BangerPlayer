@@ -315,7 +315,7 @@ class Window(qtw.QMainWindow):
                 "last_folder": None,
                 "loop": "down",
                 "shuffle": False,
-                "sort": "+name",
+                "sort": "+title",
                 "autoplay": True
             }
             self.saveConfig()
@@ -472,7 +472,19 @@ class Window(qtw.QMainWindow):
         for music in musics:
             self.musicWidgets.append(MusicWidget(music))
             self.musicWidgets[-1].wasSelected.connect(self.selectMusic)
-            self.musicsListLayout.addWidget(self.musicWidgets[-1])
+        
+        # sort the musics by the selected mode
+        reverse = True if self.sortMode[0] == "-" else False
+        self.musicWidgets.sort(key=lambda x: x.title.lower().strip(), reverse=(reverse if self.sortMode[1:] == "title" else False))  # always do a first sort by title
+        if self.sortMode[1:] == "author":
+            self.musicWidgets.sort(key=lambda x: x.author.lower().strip() if x.author else (chr(0) if reverse else chr(0x10ffff)), reverse=reverse)
+        elif self.sortMode[1:] == "time":
+            self.musicWidgets.sort(key=lambda x: x.time, reverse=reverse)
+        log.debug(f"sorted the musics for the folder {self.currentFolder}")
+
+        # add the music widgets to the interface
+        for widget in self.musicWidgets:
+            self.musicsListLayout.addWidget(widget)
         log.debug(f"loaded the musics for the folder {self.currentFolder}")
     
     def selectMusic(self, music:Path, auto:bool=False):
@@ -600,14 +612,18 @@ class Window(qtw.QMainWindow):
         if self.sortMode[0] == "+":
             self.sortMode = f"-{self.sortMode[1:]}"
         else:
-            if self.sortMode == "-name":
+            if self.sortMode == "-title":
                 self.sortMode = "+author"
             elif self.sortMode == "-author":
                 self.sortMode = "+time"
             else:
-                self.sortMode = "+name"
+                self.sortMode = "+title"
+        self.config["sort"] = self.sortMode
+        self.saveConfig()
         sortIconPath = themeAssetsDir / "icons" / "sort" / ("up" if self.sortMode[0] == "+" else "down") / f"{self.sortMode[1:]}.svg"
         self.sortButton.setIcon(QtGui.QIcon(str(sortIconPath)))
+        self.loadMusics()
+        log.info(f"changed the sort mode to {self.sortMode}")
 
     def musicPlay(self):
         """play or pause the music"""

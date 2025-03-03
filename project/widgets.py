@@ -225,6 +225,7 @@ class MusicWidget(qtw.QFrame):
         self.dictStyle = {}  # dictionary of styles for the music widget
         self.title = musicPath.stem  # title of the music
         self.author = None  # author of the music
+        self.time = 0  # duration of the music in seconds
         self.coverImage = None  # cover image binary data of the music
 
         # main layout
@@ -281,8 +282,8 @@ class MusicWidget(qtw.QFrame):
             # get duration with vlc
             media = vlc.Media(str(self.musicPath))
             media.parse()
-            duration = int(media.get_duration() / 1000)
-            self.lengthLabel.setText(f"{duration//60}:{duration%60:02}")
+            self.time = int(media.get_duration() / 1000)
+            self.lengthLabel.setText(f"{self.time//60}:{self.time%60:02}")
 
             # get metadata with eyed3
             audioFile = eyed3.load(str(self.musicPath))
