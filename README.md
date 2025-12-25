@@ -1,6 +1,6 @@
 # BangerPlayer
 
-#### A desktop music player app build with Python
+#### A desktop music player app built with Python
 
 ---
 
